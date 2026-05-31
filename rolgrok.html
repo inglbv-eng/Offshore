@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0f172a">
+    <title>⚡ OFFSHORE CHIHUAHUA - Leonardo Benítez | Perforadora México 2026-2027</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: linear-gradient(135deg, #0f172a 0%, #020617 100%); }
+        .card { transition: all 0.3s; background: rgba(24, 24, 36, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(59,130,246,0.3); }
+        .card:hover { transform: translateY(-5px); border-color: rgba(59,130,246,0.8); }
+        .countdown-number { font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, #60a5fa, #3b82f6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        
+        .calendar-pro-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+        .calendar-month-card {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(8px);
+            border-radius: 1.5rem;
+            border: 1px solid rgba(59,130,246,0.3);
+            padding: 0.75rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+        .calendar-month-card:hover {
+            transform: translateY(-4px);
+            border-color: #3b82f6;
+            box-shadow: 0 12px 28px rgba(59,130,246,0.2);
+        }
+        .month-title {
+            text-align: center;
+            font-weight: 800;
+            font-size: 1rem;
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 2px solid rgba(59,130,246,0.5);
+            color: #60a5fa;
+            letter-spacing: 1px;
+        }
+        .weekdays-row {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            text-align: center;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 6px;
+        }
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+        }
+        .cal-day-pro {
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-align: center;
+            padding: 6px 2px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.15s;
+            background: rgba(30, 41, 59, 0.6);
+            color: #cbd5e1;
+        }
+        .cal-day-pro:hover {
+            transform: scale(1.05);
+            background: #1e293b;
+        }
+        .offshore-pro {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 2px 6px rgba(16,185,129,0.3);
+        }
+        .tierra-pro {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            font-weight: bold;
+        }
+        .today-pro {
+            border: 2px solid #f59e0b;
+            box-shadow: 0 0 0 1px #f59e0b;
+            background: rgba(245,158,11,0.2);
+            color: #fde047;
+            font-weight: 800;
+        }
+        .empty-cell {
+            background: transparent;
+            opacity: 0.3;
+            cursor: default;
+        }
+        .empty-cell:hover {
+            transform: none;
+            background: transparent;
+        }
+        @media (max-width: 900px) {
+            .calendar-pro-grid { grid-template-columns: repeat(2, 1fr); gap: 0.8rem; }
+        }
+        @media (max-width: 600px) {
+            .calendar-pro-grid { grid-template-columns: 1fr; }
+            .cal-day-pro { font-size: 0.65rem; padding: 4px 1px; }
+        }
+        .badge-curso {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 3px solid #10b981;
+        }
+        .checklist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 0.75rem;
+        }
+        
+        /* === MEJORAS VISUALES === */
+        /* Contenedor de imagen de plataforma - SIN RECORTE */
+        .plataforma-container {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border-radius: 1.5rem;
+            padding: 0.75rem;
+            border: 1px solid rgba(59,130,246,0.4);
+            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.4);
+        }
+        .plataforma-img {
+            width: 100%;
+            height: auto;
+            max-height: 220px;
+            object-fit: contain;
+            border-radius: 1rem;
+            background: #0f172a;
+        }
+        /* Badge flotante sobre la imagen */
+        .badge-ubicacion {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #f59e0b;
+        }
+        /* Toast para notificaciones */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        /* Mejora para el mapa */
+        .leaflet-popup-content-wrapper {
+            background: #1e293b;
+            color: #e2e8f0;
+            border-radius: 12px;
+            border-left: 3px solid #10b981;
+        }
+        .leaflet-popup-tip {
+            background: #1e293b;
+        }
+        /* Avatar mejorado */
+        .avatar-img {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .avatar-img:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 0 3px #60a5fa, 0 0 0 6px rgba(96,165,250,0.3);
+        }
+    </style>
+</head>
+<body class="text-slate-200 min-h-screen">
+
+<div class="max-w-7xl mx-auto p-4 md:p-6">
+
+    <!-- HEADER MEJORADO -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Columna izquierda: foto y datos -->
+        <div class="flex flex-col items-center lg:items-start text-center lg:text-left">
+            <div class="relative">
+                <img src="img/leo.jpg" alt="Leonardo Benítez" class="w-full max-w-[150px] rounded-full object-cover border-4 border-blue-500 shadow-xl mb-3" onerror="this.src='https://placehold.co/112x112/1e293b/3b82f6?text=LEO'; this.onerror=null;">
+                <div class="absolute -bottom-1 -right-1 bg-emerald-500 rounded-full w-5 h-5 border-2 border-slate-900"></div>
+            </div>
+            <h1 class="text-2xl md:text-3xl font-black bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
+                LEONARDO BENÍTEZ V.
+            </h1>
+            <p class="text-md text-slate-300">Ingeniero Electrónico | Costa Afuera</p>
+            <p class="text-xs text-slate-400 mt-1"><i class="fas fa-id-card"></i> Cédula: 7996750</p>
+            <div class="flex flex-wrap gap-2 mt-3 justify-center lg:justify-start">
+                <span class="px-3 py-1 bg-blue-900/50 rounded-full text-xs"><i class="fas fa-calendar-alt"></i> 5 Jun 2026</span>
+                <span class="px-3 py-1 bg-emerald-900/50 rounded-full text-xs"><i class="fas fa-money-bill"></i> $ MXN</span>
+                <span class="px-3 py-1 bg-amber-900/50 rounded-full text-xs"><i class="fas fa-oil-can"></i> Plataforma Jack-Up CHIHUAHUA</span>
+            </div>
+        </div>
+        
+        <!-- Columna central/derecha: Foto de la plataforma MEJORADA (sin recorte) -->
+        <div class="lg:col-span-2">
+            <div class="plataforma-container relative">
+                <img src="img/3.jpg" alt="Plataforma CHIHUAHUA" class="plataforma-img" onerror="this.src='https://placehold.co/800x300/1e293b/3b82f6?text=Plataforma+CHIHUAHUA'; this.onerror=null;">
+                <div class="badge-ubicacion">
+                    <i class="fas fa-map-marker-alt text-amber-400"></i> Sonda de Campeche | 45 min de Seyba Playa
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD PREMIUM -->
+    <div class="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-6" id="dashboard-premium"></div>
+
+    <!-- CONTADORES PRO -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="card rounded-2xl p-5 text-center">
+            <p class="text-slate-400 text-sm"><i class="fas fa-rocket"></i> Próxima Subida (día 5)</p>
+            <div id="countdown-subida" class="countdown-number"></div>
+            <p id="fecha-subida" class="text-xs text-slate-400 mt-1"></p>
+        </div>
+        <div class="card rounded-2xl p-5 text-center">
+            <p class="text-slate-400 text-sm"><i class="fas fa-home"></i> Próxima Bajada (día 3)</p>
+            <div id="countdown-bajada" class="countdown-number">0 días</div>
+            <p id="fecha-bajada" class="text-xs text-slate-400 mt-1">⏳ Aún no has subido</p>
+        </div>
+        <div class="card rounded-2xl p-5 text-center">
+            <p class="text-slate-400 text-sm"><i class="fas fa-clock"></i> Días Offshore Restantes</p>
+            <div id="offshore-restantes" class="countdown-number"></div>
+            <p id="estado-actual" class="text-xs mt-1"></p>
+        </div>
+        <div class="card rounded-2xl p-5 text-center">
+            <p class="text-slate-400 text-sm"><i class="fas fa-chart-line"></i> % Año Trabajado</p>
+            <div id="porcentaje-trabajado" class="countdown-number"></div>
+            <p id="dias-acumulados" class="text-xs text-slate-400"></p>
+        </div>
+    </div>
+
+    <!-- BOTONES RÁPIDOS -->
+    <div class="flex flex-wrap gap-3 justify-center mb-8">
+        <button onclick="agendarGoogle('subida')" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-xl text-sm font-semibold transition"><i class="fab fa-google"></i> Agendar Subida</button>
+        <button onclick="agendarGoogle('bajada')" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-xl text-sm font-semibold transition"><i class="fab fa-google"></i> Agendar Bajada</button>
+        <button onclick="simularAlerta()" class="bg-amber-600 hover:bg-amber-700 px-4 py-2 rounded-xl text-sm transition"><i class="fas fa-bell"></i> Probar Alerta</button>
+        <button onclick="exportarPDF()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl text-sm transition"><i class="fas fa-file-pdf"></i> PDF</button>
+        <button onclick="compartirWhatsApp()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-xl text-sm transition"><i class="fab fa-whatsapp"></i> Compartir</button>
+        <button onclick="window.print()" class="bg-slate-600 hover:bg-slate-700 px-4 py-2 rounded-xl text-sm transition"><i class="fas fa-print"></i> Imprimir</button>
+    </div>
+
+    <!-- PESTAÑAS -->
+    <div class="mb-6 flex gap-2 border-b border-slate-700 flex-wrap">
+        <button onclick="cambiarVista('tabla')" id="btn-tabla" class="px-5 py-2 text-blue-400 border-b-2 border-blue-400 font-semibold transition"><i class="fas fa-table"></i> Tabla</button>
+        <button onclick="cambiarVista('calendario')" id="btn-calendario" class="px-5 py-2 text-slate-400 hover:text-blue-400 transition"><i class="fas fa-calendar-alt"></i> Calendario</button>
+        <button onclick="cambiarVista('mapa')" id="btn-mapa" class="px-5 py-2 text-slate-400 hover:text-blue-400 transition"><i class="fas fa-map-marked-alt"></i> Mapa Offshore</button>
+    </div>
+
+    <!-- VISTA TABLA -->
+    <div id="vista-tabla">
+        <h2 class="text-xl font-bold mb-3 text-blue-400">📅 ROL 2026-2027 (Subida día 5 / Bajada día 3)</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full mb-6">
+                <thead class="bg-blue-900/50"><tr><th class="p-3 text-left">📤 SUBIDA (día 5)</th><th class="p-3 text-left">📥 BAJADA (día 3)</th><th class="p-3">🗓️ DÍAS</th></tr></thead>
+                <tbody id="tabla-2026" class="text-sm"></tbody>
+            </table>
+            <table class="w-full">
+                <thead class="bg-blue-900/50"><tr><th class="p-3 text-left">📤 SUBIDA (día 5)</th><th class="p-3 text-left">📥 BAJADA (día 3)</th><th class="p-3">🗓️ DÍAS</th></tr></thead>
+                <tbody id="tabla-2027" class="text-sm"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- VISTA CALENDARIO PRO -->
+    <div id="vista-calendario" class="hidden">
+        <div class="card rounded-2xl p-5">
+            <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+                <h3 class="text-xl font-bold text-blue-400"><i class="fas fa-calendar-check"></i> Calendario Offshore 2026-2027</h3>
+                <div class="flex gap-3 text-sm bg-slate-800/50 px-3 py-1 rounded-full">
+                    <span><i class="fas fa-circle text-emerald-500 text-xs"></i> Offshore (28d)</span>
+                    <span><i class="fas fa-circle text-blue-500 text-xs"></i> Descanso</span>
+                    <span><i class="fas fa-sun text-amber-500 text-xs"></i> Hoy</span>
+                </div>
+            </div>
+            <div id="calendar-pro-container" class="calendar-pro-grid"></div>
+            <p class="text-center text-slate-400 text-xs mt-5"><i class="fas fa-hand-pointer"></i> Haz clic en cualquier día para ver detalle</p>
+        </div>
+    </div>
+
+    <!-- VISTA MAPA MEJORADA -->
+    <div id="vista-mapa" class="hidden">
+        <div class="card rounded-2xl p-4">
+            <div id="map" style="height: 400px; border-radius: 16px;"></div>
+            <div class="mt-3 p-3 bg-slate-800/50 rounded-xl flex flex-wrap justify-between items-center gap-2">
+                <div id="coordenadas-plataforma" class="text-xs text-cyan-400">
+                    <i class="fas fa-arrows-alt"></i> Arrastra el ícono para mover la plataforma
+                </div>
+                <button onclick="resetearPosicionPlataforma()" class="bg-amber-600 hover:bg-amber-700 px-3 py-1 rounded-lg text-xs transition">
+                    <i class="fas fa-undo-alt"></i> Resetear posición
+                </button>
+            </div>
+            <div id="distancia-plataforma" class="text-xs text-slate-400 mt-2 text-center"></div>
+            <div class="grid grid-cols-2 gap-3 mt-4 text-sm">
+                <div class="bg-slate-800/50 p-3 rounded-xl"><i class="fas fa-oil-can text-emerald-400"></i> <strong>Plataforma CHIHUAHUA</strong><br>📍 Ubicación dinámica<br>🌊 Arrástrame en el mapa</div>
+                <div class="bg-slate-800/50 p-3 rounded-xl"><i class="fas fa-anchor text-cyan-400"></i> <strong>Muelle Seyba Playa</strong><br>📍 Base logística fija<br>🚁 Helipuerto / Abastecimiento</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHECKLIST IA + CURSOS -->
+    <div class="mt-8 card rounded-2xl p-5">
+        <h3 class="text-lg font-bold mb-4"><i class="fas fa-microchip"></i> IA Offshore • Mis Certificaciones y Cursos Vigentes</h3>
+        <div class="checklist-grid" id="checklist-ia"></div>
+        <div class="mt-4 p-3 bg-emerald-900/20 rounded-xl border border-emerald-500/30 text-center text-sm">
+            <i class="fas fa-check-circle text-emerald-400"></i> <span class="font-semibold">Todos los cursos registrados ante STPS / DGMM / IADC • Vigencia asegurada para temporada 2026-2027</span>
+        </div>
+    </div>
+</div>
+
+<script>
+// ==================== DATOS ROTACIÓN CORREGIDOS ====================
+const SUELDO_MENSUAL = 25700;
+
+// Función para crear fecha en hora local (sin offset UTC)
+function crearFechaLocal(year, month, day) {
+    return new Date(year, month - 1, day);
+}
+
+// Primera subida: VIERNES 5 DE JUNIO DE 2026
+const PRIMERA_SUBIDA = crearFechaLocal(2026, 6, 5);
+
+function generarRotaciones() {
+    const rotaciones2026 = [], rotaciones2027 = [];
+    let fechaSubida = new Date(PRIMERA_SUBIDA);
+    
+    // Ciclo 28 días offshore / 28 días descanso
+    for(let i = 0; i < 4; i++) {
+        let fechaBajada = new Date(fechaSubida);
+        fechaBajada.setDate(fechaSubida.getDate() + 28);
+        rotaciones2026.push({ 
+            subida: fechaSubida, 
+            bajada: fechaBajada 
+        });
+        fechaSubida = new Date(fechaBajada);
+        fechaSubida.setDate(fechaBajada.getDate() + 28);
+    }
+    for(let i = 0; i < 7; i++) {
+        let fechaBajada = new Date(fechaSubida);
+        fechaBajada.setDate(fechaSubida.getDate() + 28);
+        rotaciones2027.push({ 
+            subida: fechaSubida, 
+            bajada: fechaBajada 
+        });
+        fechaSubida = new Date(fechaBajada);
+        fechaSubida.setDate(fechaBajada.getDate() + 28);
+    }
+    return { 2026: rotaciones2026, 2027: rotaciones2027 };
+}
+
+const rotaciones = generarRotaciones();
+const todasRotaciones = [...rotaciones[2026], ...rotaciones[2027]];
+
+// Formatear fecha a YYYY-MM-DD
+function formatFecha(fecha) {
+    return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
+}
+
+// Días entre dos fechas (en local)
+function daysBetween(fechaInicio, fechaFin) {
+    const inicio = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth(), fechaInicio.getDate());
+    const fin = new Date(fechaFin.getFullYear(), fechaFin.getMonth(), fechaFin.getDate());
+    return Math.round((fin - inicio) / (1000 * 60 * 60 * 24));
+}
+
+// Días desde hoy hasta fecha futura
+function calcularDiasHasta(fechaFutura) {
+    const hoy = new Date();
+    const hoyLocal = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+    const futuraLocal = new Date(fechaFutura.getFullYear(), fechaFutura.getMonth(), fechaFutura.getDate());
+    return Math.ceil((futuraLocal - hoyLocal) / (1000 * 60 * 60 * 24));
+}
+
+function getEstadoActual() {
+    const ahora = new Date();
+    const hoyLocal = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+    
+    for (const r of todasRotaciones) {
+        const subida = new Date(r.subida);
+        const bajada = new Date(r.bajada);
+        
+        if (hoyLocal >= subida && hoyLocal <= bajada) {
+            const diasRestantes = Math.ceil((bajada - hoyLocal) / (1000 * 60 * 60 * 24));
+            return { 
+                estado: "OFFSHORE", 
+                diasRestantes: diasRestantes, 
+                fin: bajada, 
+                inicio: subida 
+            };
+        }
+    }
+    
+    let proxSubida = null;
+    for (const r of todasRotaciones) { 
+        const subida = new Date(r.subida); 
+        if (subida > hoyLocal && (!proxSubida || subida < proxSubida)) 
+            proxSubida = subida; 
+    }
+    
+    if (proxSubida) {
+        const diasHasta = calcularDiasHasta(proxSubida);
+        return { estado: "EN TIERRA", diasRestantes: diasHasta, fin: proxSubida };
+    }
+    return { estado: "COMPLETADO", diasRestantes: 0 };
+}
+
+function renderDashboard() {
+    let diasTrabajados2026 = 0;
+    rotaciones[2026].forEach(r => diasTrabajados2026 += daysBetween(r.subida, r.bajada));
+    const estadoObj = getEstadoActual();
+    const offshoreActual = estadoObj.estado === "OFFSHORE" ? estadoObj.diasRestantes : 0;
+    const pagoEstimado = estadoObj.estado === "OFFSHORE" ? Math.round((SUELDO_MENSUAL / 28) * offshoreActual) : 0;
+    const ahorroProyectado = diasTrabajados2026 * (SUELDO_MENSUAL / 28) * 0.4;
+    const yearDays = (2026 % 4 === 0) ? 366 : 365;
+    
+    document.getElementById('dashboard-premium').innerHTML = `
+        <div class="card rounded-xl p-3 text-center"><p class="text-xs text-slate-400">⚡ Estado</p><p class="text-base font-bold ${estadoObj.estado === 'OFFSHORE' ? 'text-emerald-400' : estadoObj.estado === 'EN TIERRA' ? 'text-amber-400' : 'text-red-400'}">${estadoObj.estado}</p></div>
+        <div class="card rounded-xl p-3 text-center"><p class="text-xs text-slate-400">💰 Pago estimado</p><p class="text-base font-bold text-emerald-400">$${pagoEstimado.toLocaleString()}</p></div>
+        <div class="card rounded-xl p-3 text-center"><p class="text-xs text-slate-400">📊 Días 2026</p><p class="text-base font-bold text-blue-400">${diasTrabajados2026}</p></div>
+        <div class="card rounded-xl p-3 text-center"><p class="text-xs text-slate-400">🏦 Ahorro 40%</p><p class="text-base font-bold text-amber-400">$${Math.round(ahorroProyectado).toLocaleString()}</p></div>
+        <div class="card rounded-xl p-3 text-center"><p class="text-xs text-slate-400">🛢️ Plataforma</p><p class="text-base font-bold">CHIHUAHUA</p></div>
+        <div class="card rounded-xl p-3 text-center"><p class="text-xs text-slate-400">📍 Base</p><p class="text-base font-bold">Seyba Playa</p></div>
+    `;
+}
+
+function actualizarContadores() {
+    const ahora = new Date();
+    const hoyLocal = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+    
+    let proxSubida = null;
+    for (const r of todasRotaciones) {
+        const subida = new Date(r.subida);
+        if (subida > hoyLocal && (!proxSubida || subida < proxSubida)) {
+            proxSubida = subida;
+        }
+    }
+
+    const estadoObj = getEstadoActual();
+
+    // Próxima subida
+    if (proxSubida) {
+        const diff = calcularDiasHasta(proxSubida);
+        document.getElementById('countdown-subida').innerHTML = `${diff} días`;
+        document.getElementById('fecha-subida').innerHTML = proxSubida.toLocaleDateString('es-MX', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    } else {
+        document.getElementById('countdown-subida').innerHTML = "---";
+        document.getElementById('fecha-subida').innerHTML = "Sin rotaciones programadas";
+    }
+
+    // Offshore restantes y estado
+    document.getElementById('offshore-restantes').innerHTML = 
+        estadoObj.estado === "OFFSHORE" ? `${estadoObj.diasRestantes} días` : "0 días";
+    document.getElementById('estado-actual').innerHTML = 
+        estadoObj.estado === "OFFSHORE" 
+            ? `<span class="text-emerald-400">🟢 En plataforma CHIHUAHUA (${estadoObj.diasRestantes} días restantes)</span>`
+            : estadoObj.estado === "EN TIERRA" 
+                ? `<span class="text-amber-400">🟡 En tierra - Próxima subida en ${estadoObj.diasRestantes} días</span>`
+                : `<span class="text-red-400">🔴 Ciclo completado</span>`;
+
+    // Próxima bajada
+    let bajadaVal = 0;
+    let bajadaFechaTexto = "⏳ Aún no has subido";
+    if (estadoObj.estado === "OFFSHORE" && estadoObj.fin) {
+        const diff = calcularDiasHasta(estadoObj.fin);
+        bajadaVal = diff;
+        bajadaFechaTexto = estadoObj.fin.toLocaleDateString('es-MX', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    }
+    document.getElementById('countdown-bajada').innerHTML = `${bajadaVal} días`;
+    document.getElementById('fecha-bajada').innerHTML = bajadaFechaTexto;
+
+    // Estadísticas trabajadas
+    let totalDiasTrabajados = 0;
+    rotaciones[2026].forEach(r => {
+        totalDiasTrabajados += daysBetween(r.subida, r.bajada);
+    });
+    const yearDays = (2026 % 4 === 0) ? 366 : 365;
+    document.getElementById('porcentaje-trabajado').innerHTML = `${((totalDiasTrabajados / yearDays) * 100).toFixed(1)}%`;
+    document.getElementById('dias-acumulados').innerHTML = `📆 ${totalDiasTrabajados} días trabajados 2026`;
+}
+
+function renderTablas() {
+    const tbody2026 = document.getElementById('tabla-2026');
+    const tbody2027 = document.getElementById('tabla-2027');
+    tbody2026.innerHTML = ''; 
+    tbody2027.innerHTML = '';
+    
+    rotaciones[2026].forEach(r => { 
+        tbody2026.innerHTML += `<tr class="border-b border-slate-700 hover:bg-slate-800/50">
+            <td class="p-3 text-emerald-400 font-semibold">${formatFecha(r.subida)}</td>
+            <td class="p-3 text-orange-400 font-semibold">${formatFecha(r.bajada)}</td>
+            <td class="p-3 text-center">${daysBetween(r.subida, r.bajada)} días</td>
+        </tr>`; 
+    });
+    
+    rotaciones[2027].forEach(r => { 
+        tbody2027.innerHTML += `<tr class="border-b border-slate-700 hover:bg-slate-800/50">
+            <td class="p-3 text-emerald-400 font-semibold">${formatFecha(r.subida)}</td>
+            <td class="p-3 text-orange-400 font-semibold">${formatFecha(r.bajada)}</td>
+            <td class="p-3 text-center">${daysBetween(r.subida, r.bajada)} días</td>
+        </tr>`; 
+    });
+}
+
+function buildOffshoreMap() {
+    const offshoreMap = new Map();
+    todasRotaciones.forEach(r => {
+        const start = new Date(r.subida);
+        const end = new Date(r.bajada);
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            offshoreMap.set(formatFecha(d), true);
+        }
+    });
+    return offshoreMap;
+}
+
+function renderCalendarioPro() {
+    const container = document.getElementById('calendar-pro-container');
+    if (!container) return;
+    
+    const offshoreMap = buildOffshoreMap();
+    const hoy = new Date();
+    const hoyLocal = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+    const startDate = new Date(2026, 5, 1);
+    const mesesMostrar = [];
+    let current = new Date(startDate);
+    
+    while (current <= new Date(2027, 1, 28)) {
+        mesesMostrar.push(new Date(current));
+        current.setMonth(current.getMonth() + 1);
+    }
+    
+    const mesesRelevantes = mesesMostrar.slice(0, 9);
+    const diasSemanaAbr = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+    const mesesNombres = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    let gridHTML = '';
+    
+    for (let idx = 0; idx < mesesRelevantes.length; idx++) {
+        const fechaMes = new Date(mesesRelevantes[idx]);
+        const year = fechaMes.getFullYear();
+        const month = fechaMes.getMonth();
+        const primerDia = new Date(year, month, 1);
+        const ultimoDia = new Date(year, month + 1, 0);
+        let startWeekDay = primerDia.getDay();
+        startWeekDay = startWeekDay === 0 ? 6 : startWeekDay - 1;
+        const totalDias = ultimoDia.getDate();
+        let daysCells = '';
+        
+        for (let i = 0; i < startWeekDay; i++) daysCells += `<div class="cal-day-pro empty-cell"></div>`;
+        
+        for (let d = 1; d <= totalDias; d++) {
+            const fecha = new Date(year, month, d);
+            const fechaStr = formatFecha(fecha);
+            const esOffshore = offshoreMap.get(fechaStr) === true;
+            const esHoy = fecha.toDateString() === hoyLocal.toDateString();
+            let claseExtra = esOffshore ? 'offshore-pro' : 'tierra-pro';
+            if (esHoy) claseExtra += ' today-pro';
+            daysCells += `<div class="cal-day-pro ${claseExtra}" onclick="alert('📅 ${fecha.toLocaleDateString('es-MX')}\\n${esOffshore ? '⚡ OFFSHORE - En plataforma CHIHUAHUA' : '🏠 DESCANSO - En tierra (Seyba Playa)'}')">${d}</div>`;
+        }
+        gridHTML += `<div class="calendar-month-card"><div class="month-title">${mesesNombres[month]} ${year}</div><div class="weekdays-row">${diasSemanaAbr.map(dia => `<span>${dia}</span>`).join('')}</div><div class="days-grid">${daysCells}</div></div>`;
+    }
+    container.innerHTML = gridHTML;
+}
+
+// ==================== MAPA - SOLO MARCADOR MOVIBLE (SIN PUNTO FIJO) ====================
+let map = null;
+let movableMarker = null;
+let currentPosition = { lat: 19.68, lng: -91.0 };
+
+// Cargar posición guardada
+const savedPos = localStorage.getItem('plataformaPosicion');
+if (savedPos) {
+    const pos = JSON.parse(savedPos);
+    currentPosition = pos;
+}
+
+function initMap() {
+    if (map) map.remove();
+    
+    map = L.map('map').setView([currentPosition.lat, currentPosition.lng], 10);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { 
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+    }).addTo(map);
+    
+    // RESTAURADO: Logo personalizado de la plataforma
+    const customIcon = L.icon({
+        iconUrl: 'img/logo.png',
+        iconSize: [45, 45],
+        iconAnchor: [22, 45],
+        popupAnchor: [0, -40],
+        className: 'custom-marker-icon'
+    });
+    
+    movableMarker = L.marker([currentPosition.lat, currentPosition.lng], { 
+        icon: customIcon,  // <-- Esto es lo importante
+        draggable: true
+    }).addTo(map).bindPopup('<b>🛢️ PLATAFORMA CHIHUAHUA</b><br><i class="fas fa-arrows-alt text-amber-400"></i> <b>Arrastra para mover la plataforma</b>').openPopup();
+    
+    movableMarker.on('dragend', function(e) {
+        const pos = e.target.getLatLng();
+        currentPosition = { lat: pos.lat, lng: pos.lng };
+        localStorage.setItem('plataformaPosicion', JSON.stringify(currentPosition));
+        mostrarToast(`✅ Plataforma movida a: ${pos.lat.toFixed(4)}°, ${pos.lng.toFixed(4)}°`);
+        
+        const coordDiv = document.getElementById('coordenadas-plataforma');
+        if (coordDiv) coordDiv.innerHTML = `<i class="fas fa-map-pin text-amber-400"></i> Ubicación actual: ${pos.lat.toFixed(4)}°, ${pos.lng.toFixed(4)}°`;
+    });
+}
+
+function resetearPosicionPlataforma() {
+    const posDefault = { lat: 19.68, lng: -91.0 };
+    currentPosition = posDefault;
+    localStorage.setItem('plataformaPosicion', JSON.stringify(posDefault));
+    if (movableMarker) {
+        movableMarker.setLatLng([posDefault.lat, posDefault.lng]);
+        map.setView([posDefault.lat, posDefault.lng], 10);
+        mostrarToast('🔄 Plataforma reiniciada a posición original');
+        const coordDiv = document.getElementById('coordenadas-plataforma');
+        if (coordDiv) coordDiv.innerHTML = `<i class="fas fa-map-pin text-amber-400"></i> Ubicación actual: ${posDefault.lat}°, ${posDefault.lng}°`;
+    }
+}
+
+function mostrarToast(mensaje) {
+    let toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = '<i class="fas fa-check-circle mr-2"></i> ' + mensaje;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+function renderChecklist() {
+    const cursos = [
+        { icon: "fas fa-id-card", text: "Título / Cédula Profesional", status: "Ingeniero Electrónico • Tecnológico de Cuautla • Cédula 7996750", vigencia: "Emitida 2013" },
+        { icon: "fas fa-water", text: "RMOU - Seguridad en Plataformas", status: "Curso Básico para MOUs • 16 horas", vigencia: "Vigente hasta 12-08-2029" },
+        { icon: "fas fa-clipboard-list", text: "SPTR - Permisos Trabajo con Riesgo", status: "Signatario: APR-SPTR-1995-2026 • 24 horas", vigencia: "Vigente hasta 20-03-2030" },
+        { icon: "fas fa-hard-hat", text: "IADC RigPass®", status: "Certificación Internacional • Cert. SXX000580748", vigencia: "Expedición: 24 marzo 2026" },
+        { icon: "fas fa-gas-pump", text: "VERIFICADOR DE GAS", status: "Curso especializado • 16 horas", vigencia: "08-09 abril 2026 • STPS" },
+        { icon: "fas fa-file-alt", text: "DC-3 STPS (SPTR)", status: "Constancia de Competencias • Área 6000 Seguridad", vigencia: "Registro STPS CUAJ-741229-BIA-0005" },
+        { icon: "fas fa-briefcase", text: "Experiencia Offshore", status: "Integral Project IT (2018-2026)", vigencia: "Coordinador Meteorológico • Supervisor Técnico" }
+    ];
+    
+    document.getElementById('checklist-ia').innerHTML = cursos.map(c => `
+        <div class="badge-curso rounded-xl p-3 bg-slate-800/30 hover:bg-slate-800/50 transition">
+            <div class="flex items-start gap-2">
+                <i class="${c.icon} text-emerald-400 text-lg mt-0.5"></i>
+                <div class="flex-1">
+                    <strong class="text-white text-sm">${c.text}</strong>
+                    <p class="text-slate-300 text-xs mt-0.5">${c.status}</p>
+                    <p class="text-emerald-400 text-[10px] mt-1"><i class="fas fa-calendar-check"></i> ${c.vigencia}</p>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function cambiarVista(vista) {
+    document.getElementById('vista-tabla').classList.add('hidden');
+    document.getElementById('vista-calendario').classList.add('hidden');
+    document.getElementById('vista-mapa').classList.add('hidden');
+    
+    if (vista === 'tabla') document.getElementById('vista-tabla').classList.remove('hidden');
+    if (vista === 'calendario') { 
+        document.getElementById('vista-calendario').classList.remove('hidden'); 
+        renderCalendarioPro(); 
+    }
+    if (vista === 'mapa') { 
+        document.getElementById('vista-mapa').classList.remove('hidden'); 
+        setTimeout(() => { initMap(); }, 150); 
+    }
+    
+    document.querySelectorAll('[id^="btn-"]').forEach(btn => { 
+        btn.classList.remove('border-blue-400', 'text-blue-400', 'border-b-2'); 
+        btn.classList.add('text-slate-400'); 
+    });
+    document.getElementById(`btn-${vista}`).classList.remove('text-slate-400');
+    document.getElementById(`btn-${vista}`).classList.add('border-blue-400', 'text-blue-400', 'border-b-2');
+}
+
+function agendarGoogle(tipo) {
+    let fecha = null;
+    if(tipo === 'subida') { 
+        for(const r of todasRotaciones) { 
+            const subida = new Date(r.subida); 
+            if(subida > new Date()) { 
+                fecha = subida; 
+                break; 
+            } 
+        } 
+    } else { 
+        for(const r of todasRotaciones) { 
+            const bajada = new Date(r.bajada); 
+            if(bajada > new Date()) { 
+                fecha = bajada; 
+                break; 
+            } 
+        } 
+    }
+    if(fecha) {
+        alert(`✅ Google Calendar: ${tipo === 'subida' ? 'Subida a plataforma CHIHUAHUA' : 'Bajada a tierra'} el ${fecha.toLocaleDateString('es-MX')}`);
+    } else alert("No hay fecha disponible");
+}
+
+function simularAlerta() { 
+    alert("🔔 RECORDATORIO: Revisa tu checklist antes de subir a CHIHUAHUA!"); 
+}
+
+function exportarPDF() { 
+    alert("📄 Para exportar PDF: Presiona 'Imprimir' (Ctrl+P) → 'Guardar como PDF'"); 
+}
+
+function compartirWhatsApp() { 
+    window.open(`https://wa.me/?text=📋 *MI ROL OFFSHORE - LEONARDO BENITEZ*%0A⚡ Plataforma: CHIHUAHUA%0A📍 Base: Seyba Playa%0A🔄 Ciclo: 28x28%0A💰 Sueldo: $25,700 MXN%0A✅ Cursos: SPTR, RigPass, RMOU, Verificador de Gas vigentes`, '_blank'); 
+}
+
+// ==================== INICIALIZACIÓN ====================
+renderDashboard();
+renderTablas();
+renderChecklist();
+actualizarContadores();
+setInterval(actualizarContadores, 3600000);
+cambiarVista('tabla');
+</script>
+</body>
+</html>
